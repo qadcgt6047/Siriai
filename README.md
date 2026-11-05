@@ -192,6 +192,9 @@ killall -9 SpringBoard
 
 | 现象 | 处理 |
 | --- | --- |
+| **Actions 页停在「开始使用 GitHub Actions」引导页，没有任何构建** | 说明仓库里没有 `.github/workflows/`。最常见是**把 zip 压缩包整个拖进上传框了**（GitHub 网页不会自动解压），或漏传 `.github` 文件夹。先去「代码」页看文件列表：如果只看到一个 `.zip`，删掉它，解压后按方式 B 第 2 步重新上传里面的 12 个文件 + `.github` 文件夹；也可以点引导页蓝色「跳过此项」链接，手动粘贴 workflow（见下条） |
+| 引导页里的模板该选哪个 | **都不要点「配置」**。`Xcode - 构建与分析`、`用 Make 构建项目` 是普通 Xcode/Make 项目的模板，不认识 Theos 的 roothide 打包规则。要么上传现成的 workflow，要么点「跳过此项」自己粘贴 |
+| 手动创建 workflow 怎么操作 | 引导页点蓝色「跳过此项，且 →」→ 编辑器里 Ctrl+A 清空默认模板 → 粘贴 `build.yml` 全文 → 顶部文件名填 `.github/workflows/build.yml` → `Commit changes`。之后仍要把其余源码上传，再在 Actions 页点 `Run workflow` |
 | 安装后设置里没变化 | 确认 `SiriAIPrefs.dylib` + `SiriAIPrefs.plist` 都在；杀掉 Settings 重开；检查 `com.apple.Preferences` 过滤是否生效 |
 | 唤醒 Siri 没有动画 | 先在设置里点「预览 5 秒」；能显示说明绘制没问题，只是检测没命中 → 在「Siri 界面类名关键字」里加类名，或依赖轮询兜底 |
 | 动画不消失 | 「最长显示时间」设成 30 秒之类；或点「立即停止」 |
