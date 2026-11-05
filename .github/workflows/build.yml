@@ -1,16 +1,21 @@
 name: Build SiriAI16 roothide deb
 
+# 编译跑在 GitHub 提供的 macOS 云主机上（自带 Xcode），
+# 你的电脑只需要一个浏览器：上传源码 -> 等构建 -> 下载 .deb。
+
 on:
   push:
     branches: [ main, master ]
   workflow_dispatch:
 
 permissions:
+  # 用于自动创建 Release，让你能直接下载 .deb
   contents: write
 
 jobs:
   build:
-    runs-on: macos-14
+    # macos-14 镜像已于 2026-11-02 退役；macos-15 是当前受支持的 arm64 标签
+    runs-on: macos-15
     timeout-minutes: 60
 
     steps:
@@ -19,6 +24,7 @@ jobs:
 
       - name: Build .deb
         env:
+          # install-sdk 走 api.github.com；带上 token 可避免匿名限流导致 SDK 下载失败
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           chmod +x ./build.sh
@@ -32,6 +38,8 @@ jobs:
           path: packages/*.deb
           if-no-files-found: error
 
+      # 构建成功后直接发布成 Release，网页上点一下就能下 .deb，
+      # 不必登录后再去 Artifacts 里解一层 zip。
       - name: Publish Release
         uses: softprops/action-gh-release@v2
         with:
