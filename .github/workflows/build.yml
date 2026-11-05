@@ -1,0 +1,43 @@
+name: Build SiriAI16 roothide deb
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build .deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x ./build.sh
+          export THEOS="$HOME/theos"
+          ./build.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SiriAI16-roothide
+          path: packages/*.deb
+          if-no-files-found: error
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: SiriAI16 build ${{ github.run_number }}
+          files: packages/*.deb
+          body: |
+            iOS 16.0.2 / roothide (arm64e) 自动构建。
+            安装：dpkg -i <文件>.deb && killall -9 SpringBoard
