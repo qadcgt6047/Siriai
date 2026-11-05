@@ -1,0 +1,11 @@
+Package: com.siriai16.tweak
+Name: Siri AI 跑马灯 (iOS 16 roothide)
+Version: 1.0.0
+Architecture: iphoneos-arm64e
+Section: Tweaks
+Depends: firmware (>= 16.0), mobilesubstrate
+Maintainer: SiriAI16
+Author: SiriAI16
+Description: 在 iOS 16 上复刻 Apple Intelligence / Siri AI 的屏幕边缘彩色流光跑马灯动画，并用自定义面板替换设置中的系统 Siri 控制项。
+Depiction: https://github.com/
+Tag: role::hacker, compatible::ios16, compatible::roothide
