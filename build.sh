@@ -28,6 +28,13 @@ if [ -f SiriSound.mp3.b64 ] && [ ! -f SiriSound.mp3 ]; then
     ls -la SiriSound.mp3
 fi
 
+# MP3 转 CAF（系统提示音 AudioServicesPlaySystemSound 的标准格式，16-bit PCM）
+if [ -f SiriSound.mp3 ] && [ ! -f SiriSound.caf ]; then
+    echo "==> afconvert 转换 MP3 -> CAF"
+    afconvert -f caff -d LEI16@44100 -c 1 SiriSound.mp3 SiriSound.caf
+    ls -la SiriSound.caf
+fi
+
 echo "==> 清理旧产物"
 make clean || true
 

@@ -10,13 +10,13 @@ include $(THEOS)/makefiles/common.mk
 TWEAK_NAME = SiriSound
 
 SiriSound_FILES = Tweak.x
-SiriSound_FRAMEWORKS = AVFoundation Foundation
+SiriSound_FRAMEWORKS = AudioToolbox Foundation
 
 ADDITIONAL_CFLAGS = -fobjc-arc -Wno-unused-variable -Wno-unused-function
 
 include $(THEOS_MAKE_PATH)/tweak.mk
 
-# MP3 随包安装到 roothide 的 /var/jb 路径
+# 音效随包安装到 roothide 的 /var/jb 路径（CAF 格式，由 build.sh 转换）
 after-SiriSound-stage::
 	mkdir -p "$(THEOS_STAGING_DIR)/var/jb/Library/Application Support/SiriSound"
-	cp SiriSound.mp3 "$(THEOS_STAGING_DIR)/var/jb/Library/Application Support/SiriSound/SiriSound.mp3"
+	cp SiriSound.caf "$(THEOS_STAGING_DIR)/var/jb/Library/Application Support/SiriSound/SiriSound.caf"
