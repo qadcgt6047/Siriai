@@ -1,9 +1,9 @@
 Package: com.yourname.sirisound
 Name: SiriSound
-Version: 1.1.1
+Version: 1.1.2
 Architecture: iphoneos-arm64e
 Section: Tweaks
 Depends: firmware (>= 16.0), mobilesubstrate
-Maintainer: WorkBuddy
-Author: WorkBuddy
+Maintainer: QAQAWA
+Author: QAQAWA
 Description: Siri 启动时播放自定义音效，不打断 Siri 对话（roothide / arm64e / iOS 16）。
