@@ -1,8 +1,9 @@
 Package: com.yourname.sirisound
 Name: SiriSound
 Version: 1.0.0
-Description: Siri 启动时播放自定义 MP3 音效（arm64e，Rootless）
+Architecture: iphoneos-arm64e
+Section: Tweaks
+Depends: firmware (>= 16.0), mobilesubstrate
 Maintainer: WorkBuddy
 Author: WorkBuddy
-Section: Tweaks
-Architecture: iphoneos-arm64e
+Description: Siri 启动时播放自定义 MP3 音效（roothide / arm64e / iOS 16）。

@@ -1,0 +1,47 @@
+name: Build SiriSound (roothide arm64e)
+
+on:
+  push:
+    branches: [ sirisound ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build .deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x ./build.sh
+          export THEOS="$HOME/theos"
+          ./build.sh
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SiriSound-roothide-deb
+          path: packages/*.deb
+          if-no-files-found: error
+
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: sirisound-build-${{ github.run_number }}
+          name: SiriSound build ${{ github.run_number }}
+          files: packages/*.deb
+          body: |
+            SiriSound：Siri 启动时播放自定义 MP3 音效。
+            iOS 16.0.2 / roothide Bootstrap (arm64e) 自动构建。
+
+            安装：在 Sileo 中安装此 deb，或 dpkg -i <文件>.deb && killall -9 SpringBoard
+            安装后呼出 Siri 即应播放音效。
+            如需排查，查看 /var/jb/Library/Application Support/SiriSound/debug.txt

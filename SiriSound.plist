@@ -8,6 +8,8 @@
 		<array>
 			<string>com.apple.SiriViewService</string>
 			<string>com.apple.springboard</string>
+			<string>com.apple.siri.SystemUI</string>
+			<string>com.apple.SiriUI</string>
 		</array>
 	</dict>
 </dict>
