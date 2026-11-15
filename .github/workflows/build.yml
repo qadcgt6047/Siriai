@@ -1,0 +1,54 @@
+name: Build SiriSound (arm64e)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:   # 允许手动触发
+
+jobs:
+  build:
+    runs-on: macos-latest   # macOS 运行器，自带 Xcode + arm64e 工具链
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Theos
+        run: |
+          # 安装 Theos 到 $THEOS
+          git clone --recursive https://github.com/theos/theos.git $HOME/theos
+          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
+          # 下载 iOS SDK（arm64e 需要）
+          mkdir -p $HOME/theos/sdks
+          curl -L -o $HOME/theos/sdks/iPhoneOS16.5.sdk.tar.xz \
+            https://github.com/theos/sdks/raw/master/iPhoneOS16.5.sdk.tar.xz || true
+          cd $HOME/theos/sdks
+          tar -xf iPhoneOS16.5.sdk.tar.xz || true
+          ls -la $HOME/theos/sdks/
+
+      - name: Install toolchain (ldid + clang)
+        run: |
+          # macOS 自带 clang，装 ldid 用于签名（Theos 打包需要）
+          brew install ldid || true
+          which ldid || echo "ldid not found, will rely on theos internal"
+
+      - name: Build tweak
+        run: |
+          export THEOS=$HOME/theos
+          # Theos 需要 make 和 perl，macOS 自带
+          make package FINALPACKAGE=1
+        env:
+          THEOS: ${{ env.THEOS }}
+
+      - name: List output
+        run: |
+          ls -la packages/ || ls -la .theos/packages/ || find . -name "*.deb"
+
+      - name: Upload deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: SiriSound-arm64e-deb
+          path: |
+            packages/*.deb
+            .theos/packages/*.deb
+          if-no-files-found: warn
