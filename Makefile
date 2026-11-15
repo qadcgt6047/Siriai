@@ -1,9 +1,9 @@
-# SiriSound —— Siri 启动音效 (roothide / arm64e)
-# 构建：make package THEOS_PACKAGE_SCHEME=roothide FINALPACKAGE=1
+# SiriSound —— Siri 启动音效 (rootless / arm64)
+# 构建：make package THEOS_PACKAGE_SCHEME=rootless FINALPACKAGE=1
 # 需要 roothide/theos，见 build.sh
 
 TARGET := iphone:clang:latest:16.0
-THEOS_PACKAGE_SCHEME := roothide
+THEOS_PACKAGE_SCHEME := rootless
 
 include $(THEOS)/makefiles/common.mk
 
