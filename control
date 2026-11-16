@@ -1,6 +1,6 @@
 Package: com.yourname.sirisound
 Name: SiriSound
-Version: 1.1.2
+Version: 1.1.3
 Architecture: iphoneos-arm64
 Section: Tweaks
 Maintainer: QAQAWA

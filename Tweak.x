@@ -1,18 +1,17 @@
-// SiriSound v1.1.2 - Siri 启动音效插件 (rootless / arm64)
+// SiriSound v1.1.3 - Siri 启动音效插件 (rootless / arm64)
 // iPhone XR / iOS 16.0.2
 //
-// v1.1.2 修复（依据设备 debug-3.txt 日志）：
-//   debug-3.txt 证明 v1.1.0 一次 Siri 会话内播放了约 25 次系统提示音，
-//   触发 iOS 对 AudioServicesPlaySystemSound 的静默节流 → "前几次有声，
-//   突然没声"。v1.1.1 的 10 秒死区方案用户不接受（牺牲响应性）。
-//   改用实例生命周期检测：用关联对象追踪 SiriUIBackgroundBlurViewController
-//   的存活实例数，只在 0→1（新会话开始）时播放一次，dealloc 时重置。
-//   一次会话只播一声 → 不重叠、不触发节流；Siri 退出后立即能再响（无死区）。
-//   每次播放重建 SystemSoundID，防止长时间使用后失效。
-//   附 2.5s 安全防抖兜底（仅当 dealloc 检测异常时生效，不构成感知死区）。
+// v1.1.3 修复（用户反馈 + 实测）：
+//   在 v1.1.2 实例生命周期检测基础上，加 1.7 秒爆发流地板。
+//   用户实测：关掉 Siri 马上再召唤，1.7 秒内不会再响 —— 以此为爆发流阈值。
+//   dealloc 时不再重置播放时间戳，让 1.7s 地板持续生效，防止快速
+//   dismiss+再召唤时重复响；正常会话（>1.7s）再次召唤时地板自然放行。
+//   实例生命周期检测仍为一次会话只播一声的主闸门（防重叠）。
 //
 // 历史：
-//   v1.1.0: AVAudioPlayer → AudioServicesPlaySystemSound，不打断 Siri 录音。
+//   v1.1.2: 实例生命周期检测，一次会话一声，修复突然没声（节流）。
+//   v1.1.1: 10s 爆发流（用户不接受，死区太长）。
+//   v1.1.0: AudioServicesPlaySystemSound，不打断 Siri 录音。
 //   v1.0.0: 初版（AVAudioPlayer，会打断录音导致 Siri 下线）。
 
 #import <Foundation/Foundation.h>
@@ -26,9 +25,10 @@ static SystemSoundID ssSoundID = 0;
 static NSInteger ssAliveCount = 0;       // 已出现且仍存活的 VC 实例数
 static NSTimeInterval ssLastPlayTime = 0;
 
-// 安全防抖：略大于音效时长（2.04s），仅当 dealloc 检测异常时兜底，
-// 防止真正的音频重叠。正常情况下（dealloc 正常）永不触发。
-static const NSTimeInterval kSSSafetyDebounce = 2.5;
+// 爆发流地板（用户实测）：关掉 Siri 马上再召唤，1.7 秒内不会再响。
+// 作为实例生命周期检测的第二道闸门，防止快速 dismiss+再召唤时重复响。
+// 正常会话期间由实例生命周期检测保证只播一声，此地板极少触发。
+static const NSTimeInterval kSSBurstFloor = 1.7;
 
 static NSString *SSTimeStamp(void) {
     static NSDateFormatter *fmt = nil;
@@ -74,9 +74,9 @@ static void SSDisposeSound(void) {
 static void SSPlaySound(void) {
     NSTimeInterval now = [NSDate timeIntervalSinceReferenceDate];
 
-    // 安全防抖（兜底）
-    if (ssLastPlayTime > 0 && (now - ssLastPlayTime) < kSSSafetyDebounce) {
-        SSLog(@"安全防抖跳过（%.2fs）", now - ssLastPlayTime);
+    // 爆发流地板：距上次播放不足 1.7 秒则跳过（用户实测的快速 dismiss+再召唤间隔）
+    if (ssLastPlayTime > 0 && (now - ssLastPlayTime) < kSSBurstFloor) {
+        SSLog(@"爆发流跳过（距上次播放 %.2fs < 1.7s）", now - ssLastPlayTime);
         return;
     }
 
@@ -129,8 +129,10 @@ static void SSHandleDealloc(id self) {
         ssAliveCount--;
         if (ssAliveCount <= 0) {
             ssAliveCount = 0;
-            ssLastPlayTime = 0; // 会话结束，重置以便下次召唤立即播放
-            SSLog(@"会话结束（实例计数 →0，已重置）");
+            // 注意：不重置 ssLastPlayTime —— 让 1.7s 爆发流地板持续生效，
+            // 这样关掉 Siri 马上再召唤（1.7s 内）不会重复响。
+            // 正常会话（>1.7s）再次召唤时地板自然放行。
+            SSLog(@"会话结束（实例计数 →0，1.7s 地板保留）");
         } else {
             SSLog(@"实例销毁，计数=%ld", (long)ssAliveCount);
         }
@@ -178,7 +180,7 @@ static void SSHandleDealloc(id self) {
 %end
 
 %ctor {
-    SSLog(@"v1.1.2 已加载到进程: %@ (%@)",
+    SSLog(@"v1.1.3 已加载到进程: %@ (%@)",
           [[NSProcessInfo processInfo] processName],
           [[NSBundle mainBundle] bundleIdentifier]);
 }
