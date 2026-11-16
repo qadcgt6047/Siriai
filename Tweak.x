@@ -1,5 +1,10 @@
-// SiriSound v1.1.3 - Siri 启动音效插件 (rootless / arm64)
+// SiriSound v1.1.4 - Siri 启动音效插件 (rootless / arm64)
 // iPhone XR / iOS 16.0.2
+//
+// v1.1.4 修复（用户反馈：日志无限增长）：
+//   SSLog 写入前检查 debug.txt 大小，达到 10MB 即删除旧文件并重建。
+//   新文件首行写入轮转标记（含旧文件大小），便于诊断。
+//   日志不会再无限膨胀。
 //
 // v1.1.3 修复（用户反馈 + 实测）：
 //   在 v1.1.2 实例生命周期检测基础上，加 1.7 秒爆发流地板。
@@ -40,6 +45,9 @@ static NSString *SSTimeStamp(void) {
     return [fmt stringFromDate:[NSDate date]];
 }
 
+// 日志大小上限：达到即自动删除旧文件并新建（防止 debug.txt 无限增长）
+static const NSUInteger kSSMaxLogBytes = 10 * 1024 * 1024; // 10 MB
+
 static void SSLog(NSString *fmt, ...) {
     va_list args;
     va_start(args, fmt);
@@ -50,10 +58,25 @@ static void SSLog(NSString *fmt, ...) {
 
     NSString *path = @"/var/jb/Library/Application Support/SiriSound/debug.txt";
     NSString *dir = [path stringByDeletingLastPathComponent];
-    [[NSFileManager defaultManager] createDirectoryAtPath:dir
-                              withIntermediateDirectories:YES
-                                               attributes:nil
-                                                    error:nil];
+    NSFileManager *fm = [NSFileManager defaultManager];
+    [fm createDirectoryAtPath:dir
+      withIntermediateDirectories:YES
+                       attributes:nil
+                            error:nil];
+
+    // 日志轮转：文件大小达到 10MB 时删除旧文件并重建
+    NSDictionary *attrs = [fm attributesOfItemAtPath:path error:nil];
+    unsigned long long fileSize = [[attrs objectForKey:NSFileSize] unsignedLongLongValue];
+    if (fileSize >= kSSMaxLogBytes) {
+        [fm removeItemAtPath:path error:nil];
+        // 在新文件第一行写一条轮转标记，便于诊断
+        NSString *rotLine = [NSString stringWithFormat:
+            @"[SiriSound %@] 日志已轮转（旧文件 %.2f MB，已删除并重建）\n",
+            SSTimeStamp(), (double)fileSize / (1024.0 * 1024.0)];
+        [rotLine writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:nil];
+        NSLog(@"[SiriSound] 日志已轮转（旧文件 %.2f MB）", (double)fileSize / (1024.0 * 1024.0));
+    }
+
     NSFileHandle *fh = [NSFileHandle fileHandleForWritingAtPath:path];
     if (!fh) {
         [line writeToFile:path atomically:YES encoding:NSUTF8StringEncoding error:nil];
@@ -180,7 +203,7 @@ static void SSHandleDealloc(id self) {
 %end
 
 %ctor {
-    SSLog(@"v1.1.3 已加载到进程: %@ (%@)",
+    SSLog(@"v1.1.4 已加载到进程: %@ (%@)",
           [[NSProcessInfo processInfo] processName],
           [[NSBundle mainBundle] bundleIdentifier]);
 }
